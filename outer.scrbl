@@ -8,7 +8,7 @@
 @(define my-eval (make-base-eval))
 
 
-@title{Expanding the outer boundaries: a Racket's macro toy}
+@title{Expanding the outer boundaries: a Racket macro toy}
 
 
 Most programming languages provide a notion of binding and scope.
