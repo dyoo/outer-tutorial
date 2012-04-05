@@ -108,7 +108,7 @@ moment, works like @racket[define].
 ]
 
 During compilation time, information about lexical scope lives within
-the syntax objects that our macros process during compilation.  In
+the syntax objects that our macros process.  In
 fact, whenever we use @racket[datum->syntax] to take some inert piece
 of data and turn it into syntax, the first argument that it takes is a
 @emph{source} of lexical information.
