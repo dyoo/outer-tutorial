@@ -114,7 +114,7 @@ of data and turn it into syntax, the first argument that it takes is a
 @emph{source} of lexical information.
 
 
-We know we want to amend @racket[def] so that it stores the @racket[stx] object...
+Let's amend @racket[def] so that it stores the @racket[stx] object...
 @codeblock|{
      ;; in the def macro:
      (syntax/loc stx
