@@ -126,7 +126,8 @@ We know we want to amend @racket[def] so that it stores the @racket[stx] object.
 
 
 @margin-note{We might use @racket[syntax-parameterize], except that if
-we do so, we interfere with how @racket[define] works at the toplevel.}
+we do so, we interfere with how @racket[define] needs to be used in a
+definition context, which @racket[syntax-parameterize] does not provide.}
 ... and we want this information to be accessible when the body of the
 function is being compiled.  This is a job for the
 @racket[splicing-syntax-parameterize] form, which allows us to
