@@ -465,7 +465,7 @@ share it as we're expanding the body.
                                 ;; racket/splicing
 
 ;; Let's make a compile-time parameter called current-def that
-;; remember the innermost def that's currently being compiled.
+;; remembers the innermost def that's currently being compiled.
 (define-syntax-parameter current-def #f)
 
 (define-syntax (def stx)
