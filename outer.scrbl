@@ -315,7 +315,7 @@ binding looks like after the expander has walked across the
                (identifier-binding #'rand-2))
        #'(op rand-1 rand-2))]))]
 
-Now that we have these probes, let's use it:
+Now that we have these probes, let's use them:
 @interaction[#:eval my-eval
 (probe-1
   (define (cow x)
