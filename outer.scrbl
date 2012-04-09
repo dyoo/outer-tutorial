@@ -10,9 +10,11 @@
 
 @; I want to make Portal 2 jokes in here.  That's essentially what
 @; we're setting up: a portal for lexical scope to poke through.
+@;
+@; Something from Mass Effect would also be nice.
 
 
-@title{Expanding the boundaries of @tt{outer} space: a Racket macro toy}
+@title{Expanding the boundaries of @tt{outer} space}
 
 
 Most programming languages provide a notion of binding and scope.  We
@@ -38,8 +40,9 @@ override or @emph{shadow} a binding by setting up a new one:
 }|
 
 Within the body of @racket[f], the internal definition of @racket[x]
-in @racket[g]'s body sets up a binding that overrides the one from the
-function argument.
+in @racket[g]'s body sets up a binding that blankets the one from
+@racket[f]'s.
+
 
 
 Functions can establish their own internal scopes, and they can be
@@ -77,8 +80,8 @@ The following tutorial shows how we might poke lexical scoping portals
 into our programs, in a controlled way.  The techniques we'll show
 here are those that cooperate with Racket's compiler, so that we won't
 impose any run-time penalty.  The tutorial is meant to be mostly
-self-contained, though it does gloss over details in some sections.
-Let me know if you have any suggestions or comments!
+self-contained.  Please let me know if you have any suggestions or
+comments.
 
 
 
@@ -303,7 +306,7 @@ And now we can try this out:
 Hurrah!
 
 
-@section{Beyond the outer reaches...}
+@section{Beyond the outer boundaries...}
 
 There are a few other things we can do to extend this feature.
 
@@ -311,7 +314,11 @@ There are a few other things we can do to extend this feature.
 
    (outer <number> id) ...
 
+Making a language that hides define, lambda, block, in favor of our
+own scope-saving definitions.
 
+
+For more information, see ...
 
 
 
@@ -350,3 +357,5 @@ There are a few other things we can do to extend this feature.
 (f 2)
 }|
 }
+
+@section{History}
