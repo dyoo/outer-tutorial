@@ -463,7 +463,7 @@ share it as we're expanding the body.
 #lang racket
 
 (require racket/stxparam        ;; syntax parameters are defined in
-         racket/splicing)       ;; racket/stxparam library and
+         racket/splicing)       ;; racket/stxparam and
                                 ;; racket/splicing
 
 ;; Let's make a compile-time parameter called current-def that
