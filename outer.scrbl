@@ -104,7 +104,7 @@ tools like
 @link["http://docs.racket-lang.org/raco/make.html"]{@tt{raco make}}
 allow us to launch the compilation phase up front and save the
 bytecode to disk.  If we use @tt{raco make}, then program execution
-can pick up immediately from the on-disk bytecode.)
+can pick up immediately from the on-disk bytecode.
 
 
 One thing that makes Racket an interesting language is that it allows
