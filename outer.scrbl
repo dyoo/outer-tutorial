@@ -269,20 +269,20 @@ syntax objects in the scope of that binding.
 We can even use functions like @racket[identifier-binding] to see this
 enrichment taking place.  Let's say that we have a simple definition:
 @racketblock[
-(define (f x)
-  (* x x))
+(define (cow x)
+  (string-append "moooo?" x))
 ]
 
 We can add do-nothing macros at particular points in this definition
 to let us probe what happens during expansion.
 @racketblock[
 (probe-1
-  (define (f x)
+  (define (cow x)
     (probe-2
-      (* x x))))
+      (string-append "moooo?" x))))
 ]
 
-Let's try this:
+First, let's define the initial @racket[probe-1] macro:
 @(my-eval '(require (for-syntax racket/base)))
 @interaction[#:eval my-eval
 (define-syntax (probe-1 stx)
@@ -290,26 +290,36 @@ Let's try this:
     [(_ (d (f i)
            (p2 (op rand-1 rand-2))))
      (begin 
-       (printf "at the first probe: ~a's binding is ~a\n"
-               #'rand-1 
-               (identifier-binding #'rand-1))
+       (printf "at probe-1: ~a's binding is ~a\n"
+               #'rand-2 
+               (identifier-binding #'rand-2))
        #'(d (f i)
-            (p2 (op rand-1 rand-2))))]))
+            (p2 (op rand-1 rand-2))))]))]
 
+It will tell us what the binding of @racket[x] looks like in the body
+of the function; the expander does a top-down walk over the structure
+of the syntax object, so @racket[x] shouldn't report any lexical
+information at this point.
+
+Now for @racket[probe-2].  The second probe will see what @racket[x]'s
+binding looks like after the expander has walked across the
+@racket[define]:
+@interaction[#:eval my-eval
 (define-syntax (probe-2 stx)
   (syntax-case stx ()
     [(_ (op rand-1 rand-2))
      (begin
-       (printf "at the second probe: ~a's binding is ~a\n"
-               #'rand-1
-               (identifier-binding #'rand-1))
-       #'(op rand-1 rand-2))]))
+       (printf "at probe-2: ~a's binding is ~a\n"
+               #'rand-2
+               (identifier-binding #'rand-2))
+       #'(op rand-1 rand-2))]))]
 
-@code:comment{Now that we have these probes, let's use it:}
+Now that we have these probes, let's use it:
+@interaction[#:eval my-eval
 (probe-1
-  (define (f x)
+  (define (cow x)
     (probe-2
-      (* x x))))
+      (string-append "moooo?" x))))
 ]
 
 
@@ -524,4 +534,13 @@ For more information, see ...
 }|
 }
 
-@section{History}
+
+@section{Acknowledgements and thanks}
+
+
+This tutorial arose from my confusion on how macro expansion works.
+As you can tell,
+@link["http://lists.racket-lang.org/dev/archive/2012-April/009261.html"]{I
+get confused very easily.}  Special thanks to Robby Finder, Matthew
+Flatt, and Ryan Culpepper for helping resolve my mental confusion
+about lexical enrichment.
