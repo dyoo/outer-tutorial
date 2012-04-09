@@ -35,12 +35,13 @@ override or @emph{shadow} a binding by setting up a new one:
 (define (f x)
   (define (g)
     (define x 'objection!)   ;; Overruled!
-    x)
+    x)                       ;; This is g's x, not f's.
+
   (g))
 }|
 
-Within the body of @racket[f], the internal definition of @racket[x]
-in @racket[g]'s body sets up a binding that blankets the one from
+Within the body of @racket[f], the internal definition of @racket[g]
+in sets up a binding for @racket[x] that blankets the one from
 @racket[f]'s.
 
 
@@ -77,11 +78,11 @@ where @racket[outer] allows us to get at the binding outside of @racket[g]?
 
 
 The following tutorial shows how we might poke lexical scoping portals
-into our programs, in a controlled way.  The techniques we'll show
-here are those that cooperate with Racket's compiler, so that we won't
-impose any run-time penalty.  The tutorial is meant to be mostly
-self-contained.  Please let me know if you have any suggestions or
-comments.
+into our programs.  The techniques we'll show here are those that
+cooperate with Racket's compiler, so that we won't impose any run-time
+penalty.  The tutorial is meant to be self-contained, and expects only
+moderate Racket knowledge (functions, modules, structures).  Please
+let me know if you have any suggestions or comments.
 
 
 
@@ -98,15 +99,15 @@ most users because, under normal usage, Racket first quietly runs its compiler
 across a program into memory, and then immediately executes the
 compiled in-memory bytecode.  In fact, tools like
 @link["http://docs.racket-lang.org/raco/make.html"]{@tt{raco make}} allow
-us to drive the compilation phase up front to save the bytecode to
+us to launch the compilation phase up front, saving the bytecode to
 disk.  If we use @tt{raco make}, then program execution can pick up
 immediately from the on-disk bytecode.)
 
 
 One thing that makes Racket an interesting language is that it allows
-its users to hook expressions and other functions into the compiler,
-so that these compile-time expressions get evaluated and called during
-the compilation phase.  And unlike a textual pre-processor, these
+its users to hook expressions and functions into the compiler, so that
+these compile-time expressions get evaluated and called during the
+compilation phase.  And unlike a textual pre-processor, these
 compile-time expressions can use the full power of Racket.
 
 
@@ -121,12 +122,15 @@ As a quick example, say that we have the following program:
 }|
 }
 
+@margin-note{If we run this from DrRacket, we may see somewhat more unusual output, because
+DrRacket applies several program transformations to source programs that may
+cause @filepath{date-at-compile-time.rkt} to be compiled multiple times.}
 Let's see what happens when we run this program from the command-line:
 @verbatim|{
 $ racket date-at-compile-time.rkt 
 This program is being compiled at Monday, April 9th, 2012
 }|
-This output coroborates with the idea that, under normal circumstances,
+This output corroborates with the idea that, under normal circumstances,
 Racket does a transparent compilation if it doesn't see any stored
 bytecode on disk.
 
