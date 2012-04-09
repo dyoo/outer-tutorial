@@ -18,3 +18,5 @@
 (define (f)
   (blahblahblah (display "blah"))
   (newline))
+
+(f)
