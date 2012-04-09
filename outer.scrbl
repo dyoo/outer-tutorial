@@ -19,7 +19,7 @@
 
 
 Most programming languages provide a notion of binding and scope.  We
-can bind an name somewhere, and then refer to it in some region of
+can bind a name somewhere, and then refer to it in some region of
 a program.  For example, if we have a definition like:
 @codeblock|{
 (define (f x)
