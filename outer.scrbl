@@ -15,6 +15,7 @@
 
 
 @title{Expanding the boundaries of @tt{outer} space}
+@author+email["Danny Yoo" "dyoo@hashcollision.org"]
 
 
 Most programming languages provide a notion of binding and scope.  We
@@ -26,7 +27,7 @@ a program.  For example, if we have a definition like:
 }|
 the function's header binds @racket[x] as one of the arguments.
 Within the scope of the function's body, any references to
-@racket[x] refer to the binding to @racket[f]'s first argument.
+@racket[x] refer to the binding of @racket[f]'s first argument.
 
 ... well, except this isn't always true!  In particular, we might
 override or @emph{shadow} a binding by setting up a new one:
@@ -89,17 +90,17 @@ let me know if you have any suggestions or comments.
 @section{A brief macro tutorial}
 
 A common perception about Racket is that it's an interpreter-based
-implementation, since it has a REPL that allows for the dynamic
-evaluation of programs.  However, this perception is not quite
-correct.
+implementation, since it has a REPL and can
+@link["http://docs.racket-lang.org/guide/reflection.html"]{dynamically
+evaluate} programs.  However, this perception is not quite correct.
 
 Racket does compile programs into an internal bytecode format for
-optimization and ease of execution.  However, this compiler hides from
+optimization and ease of execution.  However, Racket hides this compiler from
 most users because, under normal usage, Racket first quietly runs its compiler
-across a program into memory, and then immediately executes the
+across a program, and then immediately executes the
 compiled in-memory bytecode.  In fact, tools like
 @link["http://docs.racket-lang.org/raco/make.html"]{@tt{raco make}} allow
-us to launch the compilation phase up front, saving the bytecode to
+us to launch the compilation phase up front and save the bytecode to
 disk.  If we use @tt{raco make}, then program execution can pick up
 immediately from the on-disk bytecode.)
 
@@ -107,9 +108,8 @@ immediately from the on-disk bytecode.)
 One thing that makes Racket an interesting language is that it allows
 its users to hook expressions and functions into the compiler, so that
 these compile-time expressions get evaluated and called during the
-compilation phase.  And unlike a textual pre-processor, these
+compilation phase.  And unlike a purely textual pre-processor, these
 compile-time expressions can use the full power of Racket.
-
 
 As a quick example, say that we have the following program:
 @filebox["date-at-compile-time.rkt"]{
@@ -122,33 +122,54 @@ As a quick example, say that we have the following program:
 }|
 }
 
+
 @margin-note{If we run this from DrRacket, we may see somewhat more unusual output, because
-DrRacket applies several program transformations to source programs that may
+DrRacket can apply several program transformations  that may
 cause @filepath{date-at-compile-time.rkt} to be compiled multiple times.}
-Let's see what happens when we run this program from the command-line:
+The main element in this program, the use of
+@racket[begin-for-syntax], declares an expression that should execute at compile-time.
+Let's see what happens when we run this program from a command-line shell:
+
+@nested[#:style 'inset]{
 @verbatim|{
 $ racket date-at-compile-time.rkt 
 This program is being compiled at Monday, April 9th, 2012
+$
 }|
-This output corroborates with the idea that, under normal circumstances,
-Racket does a transparent compilation if it doesn't see any stored
+}
+
+This output supports the idea that, under normal circumstances,
+Racket interposes a compilation phase since it doesn't see any stored
 bytecode on disk.
 
 Let's compile the program, using @tt{raco make}:
+@nested[#:style 'inset]{
 @verbatim|{
 $ raco make date-at-compile-time.rkt 
 This program is being compiled at Monday, April 9th, 2012
+$
 }|
-What is different is that bytecode has been written to disk, in a platform-specific
-location (usually under a @filepath{compiled} subdirectory).
+}
 
-Now let's try running the program with the bytecode having been already written to disk:
+What is different is that bytecode has been written to disk, under a
+@filepath{compiled} subdirectory.  Now let's try running the program
+with the bytecode having just been saved to disk:
+
+@nested[#:style 'inset]{
 @verbatim|{
 $ racket date-at-compile-time.rkt 
 $ 
 }|
-It looks like it's not doing anything.  That's because it's not doing anything.
+}
 
+It looks like it's not doing anything.  That's because it's not doing
+anything.
+
+The point is that our Racket programs can express both run-time and
+compile-time computations, and they run in distinct phases.
+
+
+@subsection{Macros are compile-time functions}
 
 
 
@@ -310,7 +331,7 @@ And now we can try this out:
 Hurrah!
 
 
-@section{Beyond the outer boundaries...}
+@section{Beyond the outer limits}
 
 There are a few other things we can do to extend this feature.
 
