@@ -246,27 +246,28 @@ generate helpful compile-time syntax errors.  For example:
 @code:comment{Turn on line/column counting for all ports:}
 (port-count-lines-enabled #t) 
 @code:comment{Read a syntax object:}
-(define a-stx (read-syntax #f (open-input-string "(hello this is a test)")))
-@code:comment{And inspect it:}
-(syntax-case a-stx ()
-  [(x y ...)
-   (begin
-     (displayln  #'x)
-     (displayln (syntax-line #'x))
-     (displayln (syntax-column #'x))
-     (displayln (syntax-position #'x))
-     (displayln (syntax-span #'x)))])]
+(define a-stx 
+  (read-syntax #f (open-input-string 
+                   "(Racket is my favorite language on the Citadel)")))
+@code:comment{And inspect the individual syntax objects in the structure:}
+(for ([piece (syntax->list a-stx)])
+  (printf "~a at line ~a, column ~a, position ~a, span ~a\n"
+          piece
+          (syntax-line piece)
+          (syntax-column piece)
+          (syntax-position piece)
+          (syntax-span piece)))]
 
 
-More importantly, syntax objects hold @emph{lexical information}, a key element
-that allows programs to bind and refer to variables.  At the beginning of
-compilation, the program's syntax object has little lexical
-information.  As the expander walks through the syntax object, though,
-it can encounter forms that introduce new bindings.  When the expander
-encounters @racket[define], it enriches the lexical information of the
-syntax objects in scope.
+More importantly, syntax objects hold @emph{lexical information}, a
+key element that allows programs to bind and refer to variables.  At
+the beginning of compilation, the program's syntax object has little
+lexical information.  As the expander walks through the syntax object,
+though, it can encounter forms that introduce new bindings.  When the
+expander encounters @racket[define], it enriches the lexical
+information of the syntax objects in scope.
 
-We can even use functions like @racket[identifier-binding] to see this
+We can use functions like @racket[identifier-binding] to see this
 enrichment taking place.  Let's say that we have a simple definition:
 @racketblock[
 (define (cow x)
