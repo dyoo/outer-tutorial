@@ -11,16 +11,18 @@
 @title{Expanding the outer boundaries: a Racket macro toy}
 
 
-Most programming languages provide a notion of binding and scope.
-If we have a definition like:
+Most programming languages provide a notion of binding and scope.  We
+can bind an name somewhere, and then refer to it in some region of
+a program.  For example, if we have a definition like:
 @codeblock|{
 (define (f x)
   ...)
 }|
-then within the scope of the function's body, any references to
+the function's header binds @racket[x] as one of the arguments.
+Within the scope of the function's body, any references to
 @racket[x] refer to the binding to @racket[f]'s first argument.
 
-... well, except that's not always true!  In particular, we might
+... well, except this isn't always true!  In particular, we might
 override or @emph{shadow} a binding by setting up a new one:
 
 @codeblock|{
@@ -37,8 +39,7 @@ function argument.
 
 
 Functions can establish their own internal scopes, and they can be
-nested within one another.  These scopes form nested boundaries.
-
+nested within one another:
 @codeblock|{
 (define (f x)
   (define (g x)
@@ -53,7 +54,8 @@ nested within one another.  These scopes form nested boundaries.
   x              ;; within here, x refers to f's x. 
   ...)
 }|
-     
+
+
 Now here's a demented question: can we poke a hole through these
 contours?  That is, would it be possible to say something like this?
 @codeblock|{
@@ -68,9 +70,41 @@ where @racket[outer] allows us to get at the binding outside of @racket[g]?
 
 
 The following mini-tutorial shows how we might poke a lexical scoping
-hole in a controlled way, using Racket's macro system.  The technique
-we'll use is one that cooperates with Racket's compiler at
-compile-time, so that we won't impose any run-time penalty.
+hole in a controlled way.  The technique we'll show here is one that
+cooperates with Racket's compiler at compile-time, so that we won't
+impose any run-time penalty.
+
+
+
+
+@section{A brief macro tutorial}
+
+A common perception about Racket is that it's an interpreter-based
+implementation, since it has a REPL that allows for the dynamic
+evaluation of programs.  However, this perception is not quite
+correct: Racket does compile programs into an internal bytecode format
+for ease of execution.  However, the compiler is mostly invisible to
+users because, under normal usage, Racket first runs its compiler
+across a program first, and then immediately executes the compiled
+bytecode.  In fact, tools like
+@link["http://docs.racket-lang.org/raco/make.html"]{raco make} allow
+us to do the compiler phase up front and save the bytecode to disk, so
+that program execution can pick up immediately from the on-disk
+bytecode.
+
+Anyway, one thing that makes Racket interesting is that it has a macro
+system that provides an open mechanism for hooking our own
+computations during that compilation phase.  The most common thing
+that advanced Racket programmers do is hook in functions that take
+some program source and do some transformation of the source at
+compile time.
+
+
+
+
+
+
+
 
 @section{Defining @racket[def]}
 As the thought experiment suggests, let's say that the boundaries will
