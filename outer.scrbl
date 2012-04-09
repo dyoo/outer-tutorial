@@ -8,7 +8,11 @@
 @(define my-eval (make-base-eval))
 
 
-@title{Expanding the outer boundaries: a Racket macro toy}
+@; I want to make Portal 2 jokes in here.  That's essentially what
+@; we're setting up: a portal for lexical scope to poke through.
+
+
+@title{Expanding the boundaries of @tt{outer} space: a Racket macro toy}
 
 
 Most programming languages provide a notion of binding and scope.  We
@@ -56,7 +60,7 @@ nested within one another:
 }|
 
 
-Now here's a demented question: can we poke a hole through these
+Now here's a loony question: can we poke a hole through these
 contours?  That is, would it be possible to say something like this?
 @codeblock|{
 (define (f x)
@@ -69,11 +73,12 @@ contours?  That is, would it be possible to say something like this?
 where @racket[outer] allows us to get at the binding outside of @racket[g]?
 
 
-The following mini-tutorial shows how we might poke a lexical scoping
-hole in a controlled way.  The technique we'll show here is one that
-cooperates with Racket's compiler at compile-time, so that we won't
-impose any run-time penalty.
-
+The following tutorial shows how we might poke lexical scoping portals
+into our programs, in a controlled way.  The techniques we'll show
+here are those that cooperate with Racket's compiler, so that we won't
+impose any run-time penalty.  The tutorial is meant to be mostly
+self-contained, though it does gloss over details in some sections.
+Let me know if you have any suggestions or comments!
 
 
 
@@ -82,24 +87,60 @@ impose any run-time penalty.
 A common perception about Racket is that it's an interpreter-based
 implementation, since it has a REPL that allows for the dynamic
 evaluation of programs.  However, this perception is not quite
-correct: Racket does compile programs into an internal bytecode format
-for ease of execution.  However, the compiler is mostly invisible to
-users because, under normal usage, Racket first runs its compiler
-across a program first, and then immediately executes the compiled
-bytecode.  In fact, tools like
-@link["http://docs.racket-lang.org/raco/make.html"]{raco make} allow
-us to do the compiler phase up front and save the bytecode to disk, so
-that program execution can pick up immediately from the on-disk
-bytecode.
+correct.
 
-Anyway, one thing that makes Racket interesting is that it has a macro
-system that provides an open mechanism for hooking our own
-computations during that compilation phase.  The most common thing
-that advanced Racket programmers do is hook in functions that take
-some program source and do some transformation of the source at
-compile time.
+Racket does compile programs into an internal bytecode format for
+optimization and ease of execution.  However, this compiler hides from
+most users because, under normal usage, Racket first quietly runs its compiler
+across a program into memory, and then immediately executes the
+compiled in-memory bytecode.  In fact, tools like
+@link["http://docs.racket-lang.org/raco/make.html"]{@tt{raco make}} allow
+us to drive the compilation phase up front to save the bytecode to
+disk.  If we use @tt{raco make}, then program execution can pick up
+immediately from the on-disk bytecode.)
 
 
+One thing that makes Racket an interesting language is that it allows
+its users to hook expressions and other functions into the compiler,
+so that these compile-time expressions get evaluated and called during
+the compilation phase.  And unlike a textual pre-processor, these
+compile-time expressions can use the full power of Racket.
+
+
+As a quick example, say that we have the following program:
+@filebox["date-at-compile-time.rkt"]{
+@codeblock|{
+#lang racket
+(require (for-syntax racket/date))
+(begin-for-syntax
+  (printf "This program is being compiled at ~a\n" 
+          (date->string (current-date))))
+}|
+}
+
+Let's see what happens when we run this program from the command-line:
+@verbatim|{
+$ racket date-at-compile-time.rkt 
+This program is being compiled at Monday, April 9th, 2012
+}|
+This output coroborates with the idea that, under normal circumstances,
+Racket does a transparent compilation if it doesn't see any stored
+bytecode on disk.
+
+Let's compile the program, using @tt{raco make}:
+@verbatim|{
+$ raco make date-at-compile-time.rkt 
+This program is being compiled at Monday, April 9th, 2012
+}|
+What is different is that bytecode has been written to disk, in a platform-specific
+location (usually under a @filepath{compiled} subdirectory).
+
+Now let's try running the program with the bytecode having been already written to disk:
+@verbatim|{
+$ racket date-at-compile-time.rkt 
+$ 
+}|
+It looks like it's not doing anything.  That's because it's not doing anything.
 
 
 
@@ -171,7 +212,7 @@ share it as we're expanding the body.
 @codeblock|{
 #lang racket
 
-(require racket/stxparam        ;; syntax parameters are defined in the
+(require racket/stxparam        ;; syntax parameters are defined in
          racket/splicing)       ;; racket/stxparam library and
                                 ;; racket/splicing
 
@@ -204,9 +245,22 @@ this is intentional.  If we do it within,
          (splicing-syntax-parameterize ([current-def #'#,stx])
             body ...)))]))
 }|
-then we end up accidently copying the lexical information too late,
-because it has been enriched with the binding information for its
-variables.  We need to take care to exclude that information.
+
+then we end up placing the @racket[splicing-parameterize] accidently
+in the scope of.  This wouldn't be so bad, except for the case that,
+when Racket processes the @racket[define], it enriches the syntax
+objects within the function body with lexical scoping information for
+its arguments.
+
+And in particular, it enriches the syntax object that we're intending to
+assign to the @racket[current-def] parameter later on.  Oops.
+
+So we need to take care to keep the
+@racket[splicing-syntax-parameterize] outside of the function's body,
+or else our pristine source of outside scope will get muddied.
+
+
+
 
 
 @section{The @racket[outer] limits}
@@ -218,7 +272,8 @@ Let's write @racket[outer] now.  Given something like @racket[(outer
 some-id)], we take @racket[some-id], rip the syntaxness out of the
 symbol with @racket[syntax-e], and surgically create a new syntax with
 the lexical information of the outer scope.
-@margin-note{In production code, we'd probably use the @racket[replace-context] function from the @racketmodname[syntax/strip-context] library instead.}
+@margin-note{In production code, we'd probably use the @racket[replace-context]
+ function from the @racketmodname[syntax/strip-context] library instead.}
 @codeblock|{
 (define-syntax (outer stx)
   (syntax-case stx ()
@@ -246,6 +301,20 @@ And now we can try this out:
 ]
 
 Hurrah!
+
+
+@section{Beyond the outer reaches...}
+
+There are a few other things we can do to extend this feature.
+
+   Better error messages with syntax-parse
+
+   (outer <number> id) ...
+
+
+
+
+
 
 
 
