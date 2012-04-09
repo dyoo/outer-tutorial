@@ -8,7 +8,8 @@
   (define (repeat-three stx)
     (syntax-case stx ()
       [(_ thing)
-       #'(begin thing thing thing)])))
+       #'(begin
+           thing thing thing)])))
   
 
 ;; And hook it up to the macro expander:

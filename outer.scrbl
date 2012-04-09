@@ -66,12 +66,12 @@ nested within one another:
 
 
 Now here's a loony question: can we poke a hole through these
-contours?  That is, would it be possible to say something like this?
+contours?  That is, would it be possible to say something like the following:
 @codeblock|{
 (define (f x)
   (define (g x)
     ...
-    (outer x)    ;; refers to f's x?
+    (outer x)    ;; can we make this refer to f's x?
     ...)
   ...)
 }|
@@ -94,15 +94,17 @@ implementation, since it has a REPL and can
 @link["http://docs.racket-lang.org/guide/reflection.html"]{dynamically
 evaluate} programs.  However, this perception is not quite correct.
 
-Racket does compile programs into an internal bytecode format for
-optimization and ease of execution.  However, Racket hides this compiler from
-most users because, under normal usage, Racket first quietly runs its compiler
-across a program, and then immediately executes the
-compiled in-memory bytecode.  In fact, tools like
-@link["http://docs.racket-lang.org/raco/make.html"]{@tt{raco make}} allow
-us to launch the compilation phase up front and save the bytecode to
-disk.  If we use @tt{raco make}, then program execution can pick up
-immediately from the on-disk bytecode.)
+Racket does use a compiler to translate programs into an
+@link["http://docs.racket-lang.org/raco/decompile.html#(part._.Bytecode_.Representation)"]{internal
+bytecode format} for optimization and ease of execution.  However,
+Racket hides this compiler from most users because, under normal
+usage, Racket first quietly runs its compiler across a program, and
+then immediately executes the compiled in-memory bytecode.  In fact,
+tools like
+@link["http://docs.racket-lang.org/raco/make.html"]{@tt{raco make}}
+allow us to launch the compilation phase up front and save the
+bytecode to disk.  If we use @tt{raco make}, then program execution
+can pick up immediately from the on-disk bytecode.)
 
 
 One thing that makes Racket an interesting language is that it allows
@@ -169,17 +171,146 @@ The point is that our Racket programs can express both run-time and
 compile-time computations, and they run in distinct phases.
 
 
+
+
 @subsection{Macros are compile-time functions}
 
 One of the main applications of compile-time computation is to rewrite
-programs from one form to another.  To be more specific, Racket's
-compiler has a rewrite engine that uses compile-time
-functions---macros---to expand a program until it only uses primitive
-``core'' forms.  In order to represent programs, Racket uses an
-abstract syntax tree structure called syntax objects.  For example,
-here is one:
+programs from one form to another.  Racket's compiler has a built-in
+@emph{expander} that uses compile-time functions to rewrite a program.
+Racket's expander is open to extension by letting us associate a
+compile-time function to a name; we call such compile-time functions
+``@emph{macros}''.  When the expander sees a name that's associated to
+a macro, it applies that macro on a selected portion of the program
+and replaces that portion with the value returned from the macro.  The
+expander continues expanding until the program only uses primitive
+``core'' forms.
 
 
+The following is a toy example of a compile-time function being used
+as a macro.
+@codeblock|{
+#lang racket
+
+(begin-for-syntax
+  ;; We can define a compile-time function:
+  ;;
+  ;; repeat-three: syntax -> syntax
+  (define (repeat-three stx)
+    (syntax-case stx ()
+      [(_ thing)
+       (syntax
+         (begin thing thing thing))])))
+  
+;; and we can hook this compile-time function up to the macro expander:
+(define-syntax blahblahblah repeat-three)
+
+;; Example:
+(blahblahblah (displayln "blah"))
+}|
+
+
+Racket uses an abstract syntax tree structure called a
+@link["http://docs.racket-lang.org/reference/syntax-model.html#(tech._syntax._object)"]{syntax
+object} to represent programs and tools to manipulate these structured
+values. We can pattern-match and pull apart a syntax object with
+@racket[syntax-case], and create a new syntax object with
+@racket[syntax].  The two forms cooperate with each other: when we
+pattern match a syntax-object with @racket[syntax-case], it exposes
+the components of the pattern so that they be referenced by
+@racket[syntax].
+
+
+Since it's such a common usage pattern to declare a compile-time
+function as a macro, @racket[define-syntax] supports a use that's
+analogous to how @racket[define] can be used to define functions.
+Racket also includes a small syntax @litchar{#'} that abbreviates
+@racket[syntax], in the same way that @litchar{'} abbreviates
+@racket[quote].  With these, the above macro can be expressed
+succinctly like this:
+@codeblock|{
+(define-syntax (blahblahblah stx)
+  (syntax-case stx ()
+    [(_ thing)
+     #'(begin thing thing thing)]))
+}|
+
+
+
+@subsection{Syntax objects are more than s-expressions}
+
+Syntax objects are more than lists and symbols.  They can
+hold their source location, which comes in handy if we want to
+generate helpful compile-time syntax errors.  For example:
+@interaction[#:eval my-eval
+@code:comment{Turn on line/column counting for all ports:}
+(port-count-lines-enabled #t) 
+@code:comment{Read a syntax object:}
+(define a-stx (read-syntax #f (open-input-string "(hello this is a test)")))
+@code:comment{And inspect it:}
+(syntax-case a-stx ()
+  [(x y ...)
+   (begin
+     (displayln  #'x)
+     (displayln (syntax-line #'x))
+     (displayln (syntax-column #'x))
+     (displayln (syntax-position #'x))
+     (displayln (syntax-span #'x)))])]
+
+
+More importantly, they hold @emph{lexical information}, a key element
+that allows programs bind and refer to variables.  At the beginning of
+compilation, the program's syntax object has little lexical
+information.  As the expander walks through the syntax object, though,
+it can encounter forms that introduce new bindings.  When the expander
+encounters @racket[define], it enriches the lexical information of the
+syntax objects in the scope of that binding.
+
+We can even use functions like @racket[identifier-binding] to see this
+enrichment taking place.  Let's say that we have a simple definition:
+@racketblock[
+(define (f x)
+  (* x x))
+]
+
+We can add do-nothing macros at particular points in this definition
+to let us probe what happens during expansion.
+@racketblock[
+(probe-1
+  (define (f x)
+    (probe-2
+      (* x x))))
+]
+
+Let's try this:
+@(my-eval '(require (for-syntax racket/base)))
+@interaction[#:eval my-eval
+(define-syntax (probe-1 stx)
+  (syntax-case stx ()
+    [(_ (d (f i)
+           (p2 (op rand-1 rand-2))))
+     (begin 
+       (printf "at the first probe: ~a's binding is ~a\n"
+               #'rand-1 
+               (identifier-binding #'rand-1))
+       #'(d (f i)
+            (p2 (op rand-1 rand-2))))]))
+
+(define-syntax (probe-2 stx)
+  (syntax-case stx ()
+    [(_ (op rand-1 rand-2))
+     (begin
+       (printf "at the second probe: ~a's binding is ~a\n"
+               #'rand-1
+               (identifier-binding #'rand-1))
+       #'(op rand-1 rand-2))]))
+
+@code:comment{Now that we have these probes, let's use it:}
+(probe-1
+  (define (f x)
+    (probe-2
+      (* x x))))
+]
 
 
 
@@ -287,18 +418,16 @@ this is intentional.  If we do it within,
 }|
 
 then we end up placing the @racket[splicing-parameterize] accidently
-in the scope of.  This wouldn't be so bad, except for the case that,
-when Racket processes the @racket[define], it enriches the syntax
-objects within the function body with lexical scoping information for
-its arguments.
+in the scope of the @racket[define].  This wouldn't be so bad, except
+for the case that, when Racket processes the @racket[define], it
+enriches the syntax objects within the function body with lexical
+scoping information for its arguments.
 
-And in particular, it enriches the syntax object that we're intending to
-assign to the @racket[current-def] parameter later on.  Oops.
-
-So we need to take care to keep the
-@racket[splicing-syntax-parameterize] outside of the function's body,
-or else our pristine source of outside scope will get muddied.
-
+And in particular, it enriches the syntax object that we're intending
+to assign to the @racket[current-def] parameter later on.  Oops.  So
+we need to take care to keep the @racket[splicing-syntax-parameterize]
+outside of the function's body, or else our pristine source of outside
+scope will get muddied.
 
 
 
