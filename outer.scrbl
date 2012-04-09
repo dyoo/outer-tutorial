@@ -471,10 +471,10 @@ share it as we're expanding the body.
 (define-syntax (def stx)
   (syntax-case stx ()
     [(_ (name args ...) body ...)
-     (quasisyntax/loc stx
-       (splicing-syntax-parameterize ([current-def #'#,stx])
-         (define (name args ...)
-            body ...)))]))
+     (with-syntax ([fun-stx stx])
+       #'(splicing-syntax-parameterize ([current-def #'fun-stx])
+           (define (name args ...)
+              body ...)))]))
 }|
 
 
@@ -509,7 +509,7 @@ scope will get muddied.
 
 
 
-@section{The @racket[outer] limits}
+@subsection{The @racket[outer] limits}
 
 Now that this version of @racket[def] holds on to the currently
 expanding definition, other compile-time macros that run in the

@@ -8,9 +8,9 @@
   (syntax-case stx ()
     [(_ (name args ...) body ...)
      (with-syntax ([fun-stx stx])
-       #'(splicing-syntax-parameterize ([current-def #'fun-stx])
-           (define (name args ...)
-              body ...)))]))
+     #`(splicing-syntax-parameterize ([current-def #'fun-stx])
+                                     (define (name args ...)
+                                       body ...)))]))
 
 (define-syntax (outer stx)
   (syntax-case stx ()
