@@ -387,8 +387,8 @@ lexical information when we create syntax objects with
 Poor @racket[cow].  What's important to see is that
 @racket['(string-append x x)] has no inherent meaning: it depends on
 what we mean by @racket[string-append] and @racket[x], and that is
-precisely what lexical information is: it associates meaningless
-symbols to their bindings.
+precisely what lexical information is: it associates meaning to 
+meaningless symbols.
 
 
 
