@@ -478,43 +478,15 @@ share it as we're expanding the body.
 }|
 
 
-@subsection{Timing is everything}
-@;
-@; Not quite satisfied with this explanation yet.  Need confirmation.
-@;
-Note that we copy the lexical information outside the @racket[define]:
-this is intentional.  If we do it within,
-@codeblock|{
-(define-syntax (def stx)
-  (syntax-case stx ()
-    [(_ (name args ...) body ...)
-     (quasisyntax/loc stx
-       (define (name args ...)
-         (splicing-syntax-parameterize ([current-def #'#,stx])
-            body ...)))]))
-}|
-
-then we end up placing the @racket[splicing-parameterize] accidently
-in the scope of the @racket[define].  This wouldn't be so bad, except
-for the case that, when Racket processes the @racket[define], it
-enriches the syntax objects within the function body with lexical
-scoping information for its arguments.
-
-And in particular, it enriches the syntax object that we're intending
-to assign to the @racket[current-def] parameter later on.  Oops.  So
-we need to take care to keep the @racket[splicing-syntax-parameterize]
-outside of the function's body, or else our pristine source of outside
-scope will get muddied.
-
-
-
 
 @subsection{The @racket[outer] limits}
 
 Now that this version of @racket[def] holds on to the currently
 expanding definition, other compile-time macros that run in the
 context of the body's expansion can access that outside lexical scope.
-Let's write @racket[outer] now.  Given something like @racket[(outer
+The function @racket[syntax-parameter-value] lets us grab this
+information.
+We have enough to write @racket[outer] now.  Given something like @racket[(outer
 some-id)], we take @racket[some-id], rip the syntaxness out of the
 symbol with @racket[syntax-e], and surgically create a new syntax with
 the lexical information of the outer scope.
@@ -549,6 +521,41 @@ And now we can try this out:
 Hurrah!
 
 
+
+
+@subsection{Timing is everything}
+@;
+@; Not quite satisfied with this explanation yet.  Need confirmation.
+@;
+Note the placement of the @racket[splicing-syntax-parameterize] outside outside the @racket[define]:
+this is intentional.  If we do it within,
+@codeblock|{
+(define-syntax (bad-def stx)
+  (syntax-case stx ()
+    [(_ (name args ...) body ...)
+     (with-syntax ([fun-stx stx])
+       #'(define (name args ...)
+           (splicing-syntax-parameterize ([current-def #'fun-stx])
+             body ...)))]))
+}|
+
+then we end up placing the @racket[splicing-parameterize] accidently
+in the scope of the @racket[define].  This wouldn't be so bad, except
+for the case that, when Racket processes the @racket[define], it
+enriches the syntax objects within the function body with lexical
+scoping information for its arguments.
+
+In particular, it enriches the syntax object that we're intending
+to assign to the @racket[current-def] parameter later on.  Oops.  So
+we need to take care to keep the @racket[splicing-syntax-parameterize]
+outside of the function's body, or else our pristine source of outside
+scope will get muddied.
+
+
+
+
+
+
 @(
 
 (lambda () (void))
@@ -576,37 +583,6 @@ For more information, see ...
 
 
 
-@section{Source code}
-@filebox["outer.rkt"]{
-@codeblock|{
-#lang racket
-
-(require racket/stxparam
-         racket/splicing)
-
-(define-syntax-parameter current-def #f)
-
-(define-syntax (def stx)
-  (syntax-case stx ()
-    [(_ (name args ...) body ...)
-     (quasisyntax/loc stx
-       (splicing-syntax-parameterize ([current-def #'#,stx])
-         (define (name args ...)
-           body ...)))]))
-
-(define-syntax (outer stx)
-  (syntax-case stx ()
-    [(_ id)
-     (datum->syntax (syntax-parameter-value #'current-def) (syntax-e #'id))]))
-
-;; Example code
-(def (f x) 
-  (def (g x) (* (outer x) x))
-  (g 4))
-
-(f 2)
-}|
-}
 
 
 @section{Acknowledgements and thanks}
