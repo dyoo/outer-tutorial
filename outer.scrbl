@@ -81,7 +81,7 @@ where @racket[outer] allows us to get at the binding outside of @racket[g]?
 The following tutorial shows how we might poke lexical scoping portals
 into our programs.  The techniques we'll show here are those that
 cooperate with Racket's compiler, so that we won't impose any run-time
-penalty.  The tutorial is meant to be self-contained, and expects only
+penalty.  The tutorial is meant to be self-contained, and expects 
 moderate Racket knowledge (functions, modules, structures).  Please
 let me know if you have any suggestions or comments.
 
@@ -258,13 +258,13 @@ generate helpful compile-time syntax errors.  For example:
      (displayln (syntax-span #'x)))])]
 
 
-More importantly, they hold @emph{lexical information}, a key element
-that allows programs bind and refer to variables.  At the beginning of
+More importantly, syntax objects hold @emph{lexical information}, a key element
+that allows programs to bind and refer to variables.  At the beginning of
 compilation, the program's syntax object has little lexical
 information.  As the expander walks through the syntax object, though,
 it can encounter forms that introduce new bindings.  When the expander
 encounters @racket[define], it enriches the lexical information of the
-syntax objects in the scope of that binding.
+syntax objects in scope.
 
 We can even use functions like @racket[identifier-binding] to see this
 enrichment taking place.  Let's say that we have a simple definition:
@@ -322,9 +322,14 @@ Now that we have these probes, let's use it:
       (string-append "moooo?" x))))
 ]
 
+As we can see, the expansion process enriches the syntax objects in
+the definition of @racket[cow]; @racket[probe-2] shows us that, at the
+point where the expander reaches @racket[probe-2], @racket[x] knows it
+is lexically bound.
 
 
-
+Now that we're finished probing @racket[cow], let's go back and see
+how to define @racket[outer] in the remaining space we have.
 
 
 
@@ -482,10 +487,15 @@ And now we can try this out:
 Hurrah!
 
 
-@section{Beyond the outer limits}
+@(
 
-There are a few other things we can do to extend this feature.
+(lambda () (void))
 
+#|
+section{Beyond the outer limits}
+@;
+@;There are a few other things we can do to extend this feature.
+@;
    Better error messages with syntax-parse
 
    (outer <number> id) ...
@@ -496,7 +506,9 @@ own scope-saving definitions.
 
 For more information, see ...
 
+|#
 
+)
 
 
 
@@ -537,10 +549,8 @@ For more information, see ...
 
 @section{Acknowledgements and thanks}
 
-
-This tutorial arose from my confusion on how macro expansion works.
-As you can tell,
-@link["http://lists.racket-lang.org/dev/archive/2012-April/009261.html"]{I
-get confused very easily.}  Special thanks to Robby Finder, Matthew
-Flatt, and Ryan Culpepper for helping resolve my mental confusion
-about lexical enrichment.
+This tutorial arose from
+@link["http://lists.racket-lang.org/dev/archive/2012-April/009261.html"]{my
+confusion} on how macro expansion works.  Special thanks to Robby
+Finder, Matthew Flatt, and Ryan Culpepper for helping resolve my
+mental confusion about lexical enrichment.
