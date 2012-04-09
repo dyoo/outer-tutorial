@@ -437,24 +437,22 @@ moment, works like @racket[define].
 (f 3)
 ]
 
-During compilation time, information about lexical scope lives within
-the syntax objects that our macros process.
 
-
-When we use @racket[datum->syntax] to take some inert piece of data
-and turn it into syntax, the first argument that it takes is a source
-of lexical information.
-
-
+We want to amend @racket[def] so that it stores the syntax object
+representing the function as a whole.  We want this information to be
+accessible to other macros that expand when the body of the function
+is compiled.  That way, when we're in an @racket[outer], we might take
+that stored syntax object and use it as the source of lexical
+information in constructing a new syntax, as we did with
+@racket[probe-3].
 
 
 
 @margin-note{We might use @racket[syntax-parameterize], except that if
 we do so, we interfere with how @racket[define] needs to be used in a
 definition context, which @racket[syntax-parameterize] does not
-provide.}  We want to amend @racket[def] so that it stores the
-@racket[stx] object, and we want this information to be accessible
-when the body of the function is being compiled.  This is a job for
+provide.}
+This is a job for
 the @racket[splicing-syntax-parameterize] form, which allows us to
 maintain this kind of compile-time information during compilation and
 share it as we're expanding the body.
