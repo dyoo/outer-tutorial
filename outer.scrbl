@@ -328,16 +328,85 @@ the definition of @racket[cow]; @racket[probe-2] shows us that, at the
 point where the expander reaches @racket[probe-2], @racket[x] knows it
 is lexically bound.
 
+@subsection{Moooo?}
+
+Lexical information isn't just stored in a symbolic syntax object like
+@racket[x], but rather it's present in every syntax object.  To
+demonstrate this, we can make a @racket[probe-3] that's bit more
+disruptive to @racket[cow]: it will take the @racket["moooo?"] out of
+the cow and put something else in its place.
+
+We'll use a combination of two tools to perform this surgery:
+@racket[datum->syntax] and @racket[with-syntax].
+@racket[datum->syntax] lets us create syntax objects with arbitrary
+lexical information, and @racket[with-syntax] acts like a @racket[let]
+that allows us to inject syntax objects with @racket[syntax].  Just
+like @racket[syntax-case], @racket[with-syntax] cooperates with
+@racket[syntax] to make it easy to construct new syntaxes.
+
+@interaction[#:eval my-eval
+(define-syntax (probe-3 stx)
+  (syntax-case stx ()
+    [(_ (op rand-1 rand-2))
+     (with-syntax ([new-rand-1
+                    (datum->syntax #'rand-1 '(string-append x x))])
+       #'(op new-rand-1 rand-2))]))
+
+(define (cow x)
+  (probe-3
+    (string-append "moooo?" x)))
+
+(cow "blah")
+]
+
+The use of @racket[datum->syntax] here takes the lexical information
+from @racket["moooo?"], and pushes it into a fresh syntax object that
+we construct from @racket['(string-append x x)].
+
+And now our @racket[cow] has been transmogrified into
+something... familiar, yet unnatural.  How unfortunate.
+
+
+
+It's instructive to see what happens if we neglect to preserve the
+lexical information when we create syntax objects with
+@racket[datum->syntax].  What happens if we just put @racket[#f] in there?
+
+@interaction[#:eval my-eval
+(define-syntax (probe-4 stx)
+  (syntax-case stx ()
+    [(_ (op rand-1 rand-2))
+     (with-syntax ([new-rand-1
+                    (datum->syntax #f '(string-append x x))])
+       #'(op new-rand-1 rand-2))]))
+
+(define (cow x)
+  (probe-4
+    (string-append "moooo?" x)))]
+
+Poor @racket[cow].  What's important to see is that
+@racket['(string-append x x)] has no inherent meaning: it depends on
+what we mean by @racket[string-append] and @racket[x], and that is
+precisely what lexical information is: it associates meaningless
+symbols to their bindings.
+
+
 
 Now that we're finished probing @racket[cow], let's go back and see
 how to define @racket[outer] in the remaining space we have.
 
 
-
 @section{Defining @racket[def]}
-As the thought experiment suggests, let's say that the boundaries will
-be at the outskirts of a function definition.  In fact, let's make
-these boundaries a bit more explicit, by introducing our own
+
+We now have a better idea of how macros and lexical scope works.
+Syntax objects accumulate lexical information through the actions of
+the expander.  Now let's break lexical scope.
+
+To qualify: we'd like to define an @racket[outer] form that lets us
+break lexical scoping in a controlled fashion: we'll allow
+@racket[outer] to poke holds along scope boundaries.  Let's say that
+the boundaries will be at the outskirts of a function definition.  In
+fact, let's make these boundaries explicit, by introducing our own
 @racket[def] form.  It'll works similarly to @racket[define].
 
 @codeblock|{
@@ -346,8 +415,7 @@ these boundaries a bit more explicit, by introducing our own
 (define-syntax (def stx)
   (syntax-case stx ()
     [(_ (name args ...) body ...)
-     (syntax/loc stx
-       (define (name args ...) body ...))]))
+     #'(define (name args ...) body ...)]))
 }|
 
 @racket[def] gives us a function definition syntax that, at the
@@ -370,29 +438,24 @@ moment, works like @racket[define].
 ]
 
 During compilation time, information about lexical scope lives within
-the syntax objects that our macros process.  In
-fact, whenever we use @racket[datum->syntax] to take some inert piece
-of data and turn it into syntax, the first argument that it takes is a
-@emph{source} of lexical information.
+the syntax objects that our macros process.
 
 
-Let's amend @racket[def] so that it stores the @racket[stx] object...
-@codeblock|{
-     ;; in the def macro:
-     (syntax/loc stx
-       ;; Somehow, we want to hold onto the stx syntax object and make
-       ;; it available during the compilation of body around here...
-       (define (name args ...)
-         body ...))
-}|
+When we use @racket[datum->syntax] to take some inert piece of data
+and turn it into syntax, the first argument that it takes is a source
+of lexical information.
+
+
+
 
 
 @margin-note{We might use @racket[syntax-parameterize], except that if
 we do so, we interfere with how @racket[define] needs to be used in a
-definition context, which @racket[syntax-parameterize] does not provide.}
-... and we want this information to be accessible when the body of the
-function is being compiled.  This is a job for the
-@racket[splicing-syntax-parameterize] form, which allows us to
+definition context, which @racket[syntax-parameterize] does not
+provide.}  We want to amend @racket[def] so that it stores the
+@racket[stx] object, and we want this information to be accessible
+when the body of the function is being compiled.  This is a job for
+the @racket[splicing-syntax-parameterize] form, which allows us to
 maintain this kind of compile-time information during compilation and
 share it as we're expanding the body.
 
