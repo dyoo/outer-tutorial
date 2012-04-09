@@ -171,6 +171,18 @@ compile-time computations, and they run in distinct phases.
 
 @subsection{Macros are compile-time functions}
 
+One of the main applications of compile-time computation is to rewrite
+programs from one form to another.  To be more specific, Racket's
+compiler has a rewrite engine that uses compile-time
+functions---macros---to expand a program until it only uses primitive
+``core'' forms.  In order to represent programs, Racket uses an
+abstract syntax tree structure called syntax objects.  For example,
+here is one:
+
+
+
+
+
 
 
 
