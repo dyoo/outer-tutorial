@@ -424,8 +424,7 @@ fact, let's make these boundaries explicit, by introducing our own
      #'(define (name args ...) body ...)]))
 }|
 
-@racket[def] gives us a function definition syntax that, at the
-moment, works like @racket[define].
+@racket[def] gives us a function definition syntax that.  Let's try it.
 
 @(begin
 (my-eval '(begin (require racket/stxparam (for-syntax racket/base) racket/splicing)
