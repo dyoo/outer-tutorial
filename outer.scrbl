@@ -14,7 +14,7 @@
 @; Something from Mass Effect would also be nice.
 
 
-@title{Expanding the boundaries of @tt{outer} space}
+@title{Exploring the boundaries of @tt{outer} space}
 @author+email["Danny Yoo" "dyoo@hashcollision.org"]
 
 
