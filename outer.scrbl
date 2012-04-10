@@ -413,7 +413,7 @@ break lexical scoping in a controlled fashion: we'll allow
 @racket[outer] to poke holes along scope boundaries.  Let's say that
 the boundaries will be at the outskirts of a function definition.  In
 fact, let's make these boundaries explicit, by introducing our own
-@racket[def] form.  It'll works similarly to @racket[define].
+@racket[def] form.  It will behave similarly to @racket[define].
 
 @codeblock|{
 #lang racket
