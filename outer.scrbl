@@ -99,7 +99,9 @@ where @racket[outer] allows us to get at the binding outside of @racket[g]?
 
 
 @margin-note{This document should have extensive hyperlinks that reference
-into the official documentation.  For example, ``@racket[define]'' should be a
+into the official documentation.  Many of the words
+in @tt{typewriter} font are hyperlinks.
+For example, ``@racket[define]'' should be a
 hyperlink to the documentation for Racket's binding form.}
 The following tutorial shows how we might poke lexical scoping portals
 into our programs.  The techniques we'll show here are those that
