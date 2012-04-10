@@ -270,7 +270,7 @@ Syntax objects are more than lists and symbols.  They can
 hold their source location, which comes in handy if we want to
 generate helpful compile-time syntax errors.  For example:
 @interaction[#:eval my-eval
-@code:comment{Turn on line/column counting for all ports:}
+@code:comment{Turn on line/column counting for all new ports:}
 (port-count-lines-enabled #t) 
 @code:comment{Read a syntax object:}
 (define a-stx 
