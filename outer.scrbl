@@ -424,7 +424,7 @@ fact, let's make these boundaries explicit, by introducing our own
      #'(define (name args ...) body ...)]))
 }|
 
-@racket[def] gives us a function definition syntax that.  Let's try it.
+@racket[def] gives us a function definition syntax.  Let's try it.
 
 @(begin
 (my-eval '(begin (require racket/stxparam (for-syntax racket/base) racket/splicing)
@@ -455,7 +455,8 @@ information in constructing a new syntax, as we did with
 
 @margin-note{We might use @racket[syntax-parameterize], except that if
 we do so, we interfere with how @racket[define] needs to be used in a
-definition context.}
+@link["http://docs.racket-lang.org/reference/syntax-model.html#(part._expand-context-model)"]{context}
+that permits definitions.}
 This is a job for
 the @racket[splicing-syntax-parameterize] form, which allows us to
 maintain this kind of compile-time information during compilation and
