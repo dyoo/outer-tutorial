@@ -7,11 +7,15 @@
 
 @(define my-eval (make-base-eval))
 
-
-@; I want to make Portal 2 jokes in here.  That's essentially what
+@; Theme: SPAAAACE
+@;
+@; I want to make Portal 2 jokes in here, given the way the
+@; outer macro works.  That is essentially what
 @; we're setting up: a portal for lexical scope to poke through.
 @;
 @; Something from Mass Effect would also be nice.
+@;
+@; As would something from Star Trek.
 
 
 @title{Exploring the boundaries of @tt{outer} space}
@@ -82,8 +86,9 @@ The following tutorial shows how we might poke lexical scoping portals
 into our programs.  The techniques we'll show here are those that
 cooperate with Racket's compiler, so that we won't impose any run-time
 penalty.  The tutorial is meant to be self-contained, and expects 
-moderate Racket knowledge (functions, modules, structures).  Please
-let me know if you have any suggestions or comments.
+moderate Racket knowledge (functions, modules, structures).
+
+Please let me know if you have any suggestions or comments!
 
 
 
@@ -117,10 +122,11 @@ As a quick example, say that we have the following program:
 @filebox["date-at-compile-time.rkt"]{
 @codeblock|{
 #lang racket
-(require (for-syntax racket/date))
+(require (for-syntax racket/date 
+                     (planet dyoo/stardate)))
 (begin-for-syntax
-  (printf "This program is being compiled at ~a\n" 
-          (date->string (current-date))))
+  (printf "This program is being compiled at Stardate ~a\n" 
+          (date->stardate (current-date))))
 }|
 }
 
@@ -135,7 +141,7 @@ Let's see what happens when we run this program from a command-line shell:
 @nested[#:style 'inset]{
 @verbatim|{
 $ racket date-at-compile-time.rkt 
-This program is being compiled at Monday, April 9th, 2012
+This program is being compiled at Stardate 65741.5
 $
 }|
 }
@@ -148,7 +154,7 @@ Let's compile the program, using @tt{raco make}:
 @nested[#:style 'inset]{
 @verbatim|{
 $ raco make date-at-compile-time.rkt 
-This program is being compiled at Monday, April 9th, 2012
+This program is being compiled at Stardate 65741.6
 $
 }|
 }
@@ -541,12 +547,12 @@ this is intentional.  If we do it within,
 
 then we end up placing the @racket[splicing-parameterize] accidently
 in the scope of the @racket[define].  This wouldn't be so bad, except
-for the case that, when Racket processes the @racket[define], it
-enriches the syntax objects within the function body with lexical
-scoping information for its arguments.
+for the case that, when Racket processes the @racket[define], the
+expander enriches the syntax objects within the function body with
+lexical scoping information for its arguments.
 
 In particular, it enriches the syntax object that we're intending
-to assign to the @racket[current-def] parameter later on.  Oops.  So
+to assign to the @racket[current-def] parameter later on.  Ooops.  So
 we need to take care to keep the @racket[splicing-syntax-parameterize]
 outside of the function's body, or else our pristine source of outside
 scope will get muddied.
