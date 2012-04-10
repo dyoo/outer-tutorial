@@ -162,7 +162,7 @@ $
 }|
 }
 
-What is different is that bytecode has been written to disk, under a
+What is different is that the bytecode has been written to disk, under a
 @filepath{compiled} subdirectory.  Now let's try running the program
 with the bytecode having just been saved to disk:
 
@@ -223,10 +223,10 @@ as a macro.
 
 Racket uses an abstract syntax tree structure called a
 @link["http://docs.racket-lang.org/reference/syntax-model.html#(tech._syntax._object)"]{syntax
-object} to represent programs and tools to manipulate these structured
+object} to represent programs.  It provides a variety of tools to manipulate these structured
 values. We can pattern-match and pull apart a syntax object with
-@racket[syntax-case], and create a new syntax object with
-@racket[syntax].  The two forms cooperate with each other: when we
+``@racket[syntax-case]'', and create a new syntax object with
+``@racket[syntax]''.  The two forms cooperate with each other: when we
 pattern match a syntax-object with @racket[syntax-case], it exposes
 the components of the pattern so that they be referenced by
 @racket[syntax].
