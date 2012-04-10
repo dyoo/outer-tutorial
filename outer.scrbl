@@ -456,8 +456,7 @@ information in constructing a new syntax, as we did with
 
 @margin-note{We might use @racket[syntax-parameterize], except that if
 we do so, we interfere with how @racket[define] needs to be used in a
-definition context, which @racket[syntax-parameterize] does not
-provide.}
+definition context.}
 This is a job for
 the @racket[splicing-syntax-parameterize] form, which allows us to
 maintain this kind of compile-time information during compilation and
