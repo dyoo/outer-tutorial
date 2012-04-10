@@ -42,8 +42,8 @@ override or @emph{shadow} a binding by setting up a new one:
 }|
 
 Within the body of @racket[f], the internal definition of @racket[g]
-in sets up a binding for @racket[x] that blankets the one from
-@racket[f]'s.
+in @racket[f] sets up a binding for @racket[x] that blankets the one
+from @racket[f]'s.
 
 
 
@@ -590,5 +590,5 @@ For more information, see ...
 This tutorial arose from
 @link["http://lists.racket-lang.org/dev/archive/2012-April/009261.html"]{my
 confusion} on how macro expansion works.  Special thanks to Robby
-Finder, Matthew Flatt, and Ryan Culpepper for helping resolve my
+Findler, Matthew Flatt, and Ryan Culpepper for helping resolve my
 mental confusion about lexical enrichment.
