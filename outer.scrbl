@@ -82,6 +82,9 @@ contours?  That is, would it be possible to say something like the following:
 where @racket[outer] allows us to get at the binding outside of @racket[g]?
 
 
+@margin-note{This document should have extensive hyperlinks that reference
+into the official documentation.  For example, ``@racket[define]'' should be a
+hyperlink to the documentation for Racket's binding form.}
 The following tutorial shows how we might poke lexical scoping portals
 into our programs.  The techniques we'll show here are those that
 cooperate with Racket's compiler, so that we won't impose any run-time
@@ -181,6 +184,8 @@ compile-time computations, and they run in distinct phases.
 
 @subsection{Macros are compile-time functions}
 
+@margin-note{For the gory details about Racket's expansion
+process, see the @link["http://docs.racket-lang.org/reference/syntax-model.html"]{reference manual}.}
 One of the main applications of compile-time computation is to rewrite
 programs from one form to another.  Racket's compiler has a built-in
 @emph{expander} that uses compile-time functions to rewrite a program.
