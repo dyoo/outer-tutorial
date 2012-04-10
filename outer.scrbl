@@ -553,7 +553,7 @@ Hurrah!
 @;
 @; Not quite satisfied with this explanation yet.  Need confirmation.
 @;
-Note the placement of the @racket[splicing-syntax-parameterize] outside outside the @racket[define]:
+Note the placement of the @racket[splicing-syntax-parameterize] outside the @racket[define]:
 this is intentional.  If we do it within,
 @codeblock|{
 (define-syntax (bad-def stx)
