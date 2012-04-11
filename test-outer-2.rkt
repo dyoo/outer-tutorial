@@ -1,6 +1,6 @@
 #lang racket
 
-(require (planet dyoo/outer/outer-2)
+(require "outer-2.rkt"
          rackunit)
 
 (define-syntax m1
