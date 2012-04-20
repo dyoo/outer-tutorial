@@ -191,3 +191,26 @@
                   (h outer))            
                 (g 'test-again))
               'test-again)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(let ()
+  (define-syntax m3
+    (syntax-rules ()
+      ((_ id val)
+       (let ()
+         (def (h id)
+              (def (g id)
+                   val)
+              (g id))
+         (h 2)))))
+
+  (def (g x)
+    (def (h x)
+      (m3 x (outer x)))
+    (h 5))
+
+  (check-equal? (g 4) 4))
