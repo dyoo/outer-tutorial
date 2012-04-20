@@ -5,7 +5,8 @@
 (require racket/stxparam
          racket/splicing)
 
-(require (for-syntax racket/list))
+(require (for-syntax racket/list
+                     syntax/strip-context))
 
 ;; We represent both the inside and outside of a scope
 ;; by holding both respectively in these two parameters.
@@ -19,7 +20,9 @@
 (define-syntax (def stx)
  (syntax-case stx ()
    [(_ (name args ...) body ...)
-    (with-syntax ([fun-stx stx])
+    (with-syntax ([fun-stx stx]
+                  [name (strip-context #'name)]
+                  [(args ...) (map strip-context (syntax->list #'(args ...)))])
       #'(splicing-syntax-parameterize
          ([current-outsides
            (cons #'fun-stx
