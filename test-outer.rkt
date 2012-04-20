@@ -183,7 +183,7 @@
 
 
 
-(check-equal? (let ()
+#;(check-equal? (let ()
                 (def (g outer)
                   (def (h x)
                     (outer outer))
