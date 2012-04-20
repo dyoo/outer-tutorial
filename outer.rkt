@@ -7,7 +7,8 @@
 (provide def outer)
 
 (begin-for-syntax
- (define internal-outer-keyword (car (generate-temporaries #'(outer)))))
+ (define internal-outer-keyword (car (generate-temporaries #'(outer))))
+ (displayln internal-outer-keyword))
 
 
 (define-syntax (def stx)
@@ -45,4 +46,4 @@
   (lambda (stx)
     (syntax-case stx ()
       [(_ body ...)
-       #`(#,(replace-context stx internal-outer-keyword)  body ...)])))
+       #`(#,(replace-context stx internal-outer-keyword) body ...)])))
