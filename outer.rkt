@@ -2,6 +2,9 @@
 (require racket/splicing
          (for-syntax syntax/strip-context))
 
+(provide def outer)
+
+
 (define-syntax (def stx)
   (syntax-case stx ()
     [(_ (name args ...) body ...)
@@ -10,21 +13,22 @@
        #'(splicing-let-syntax ([outer-keyword
                                 (lambda (an-stx)
                                   (syntax-case an-stx ()
-                                    [(_ outer-expr)
-                                     (replace-context #'outside-context #'outer-expr)]))])
+                                    [(o outer-expr)
+                                     (replace-context #'outside-context #'outer-expr)]
+
+                                    [(o k outer-expr)
+                                     (and (exact-positive-integer? (syntax->datum #'k))
+                                          (= (syntax->datum #'k) 1))
+                                     #'(o outer-expr)]
+
+                                    [(o k outer-expr)
+                                     (and (exact-positive-integer? (syntax->datum #'k))
+                                          (> (syntax->datum #'k) 1))
+                                     (with-syntax ([k-1 (sub1 (syntax->datum #'k))])
+                                        #'(o k-1 (o outer-expr)))]))])
+
             (define (name args ...)
                body ...)))]))
 
 (define-syntax (outer stx)
   (raise-syntax-error #f "Shouldn't be used outside the context of a def\n" stx))
-
-
-(module+ test
-
-  (require rackunit)
-
-  (let ()
-    (def (f x) 
-      (def (g x) (* (outer x) x))
-        (g 4))
-    (check-expect (f 2) 8)))
