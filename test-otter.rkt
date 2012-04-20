@@ -185,11 +185,11 @@
 
 
 
-#;(check-equal? (let ()
-                (def (g otter)
+(check-equal? (let ()
+                (def (g outer)
                   (def (h x)
-                    (otter otter))
-                  (h otter))            
+                    (otter outer))
+                  (h outer))            
                 (g 'test-again))
               'test-again)
 
