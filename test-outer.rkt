@@ -171,3 +171,23 @@
                   (h 5))
                 (g 17))
               17)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(check-equal? (let ()
+                (def (g outer)
+                  outer)
+                (g 'test))
+              'test)
+
+
+
+(check-equal? (let ()
+                (def (g outer)
+                  (def (h x)
+                    (outer outer))
+                  (h outer))            
+                (g 'test-again))
+              'test-again)
