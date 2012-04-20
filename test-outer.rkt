@@ -5,7 +5,6 @@
 
 
 
-
 (let ()
   (def (f x) 
     (def (g x) (* (outer x) x))
@@ -203,9 +202,9 @@
       ((_ id val)
        (let ()
          (def (h id)
-              (def (g id)
-                   val)
-              (g id))
+           (def (g id)
+             val)
+           (g id))
          (h 2)))))
 
   (def (g x)

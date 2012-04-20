@@ -1,6 +1,7 @@
-#lang racket
+#lang racket/base
 (require racket/splicing
-         (for-syntax syntax/strip-context))
+         (for-syntax racket/base
+                     syntax/strip-context))
 
 (provide def outer)
 
