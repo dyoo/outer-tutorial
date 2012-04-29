@@ -209,15 +209,19 @@ compile-time computations, and they run in distinct phases.
 see the
 @link["http://docs.racket-lang.org/reference/syntax-model.html"]{reference
 manual}.}  One of the main applications of compile-time computation is
-to rewrite programs from one form to another.  Racket's compiler has a
-built-in @emph{expander} process that uses compile-time functions to
-rewrite a program.  Racket's expander is open to extension by letting
-us associate a compile-time function to a name; we call such
-compile-time functions ``@emph{macros}''.  When the expander sees a
-name that's associated to a macro, it applies that macro on a selected
-portion of the program and replaces that portion with the value
-returned from the macro.  The expander continues expanding until the
-program only uses primitive ``core'' forms.
+to rewrite programs from one form to another.  The idea behind this is
+that programmers can write programs in a language that's bigger than
+the one they actually have, but also include rewrite rules that
+transform their programs back into the language they have.
+
+Racket's compiler has a built-in @emph{expander} process that uses
+compile-time functions to rewrite a program.  Racket's expander is
+open to extension by letting us associate a compile-time function to a
+name; we call such compile-time functions ``@emph{macros}''.  When the
+expander sees a name that's associated to a macro, it applies that
+macro on a selected portion of the program and replaces that portion
+with the value returned from the macro.  The expander continues
+expanding until the program only uses primitive ``core'' forms.
 
 
 The following is a toy example of a compile-time function being used
@@ -287,6 +291,8 @@ succinctly like this:
     [(_ thing)
      #'(begin thing thing thing)]))
 }|
+
+We will use the abbreviated forms from now on.
 
 
 
@@ -617,6 +623,15 @@ outside of the function's body, or else our pristine source of outside
 scope will get muddied.
 
 
+
+@subsection{Improvements}
+Now that we have an @racket[outer] macro, let's make it nicer to work with.  What's wrong with it?
+
+@subsubsection{Prime directive: Preserving source location}
+
+@subsubsection{Quantum leap: jumping across multiple scopes at once}
+
+@subsubsection{Warning Will Robinson: Better error messages at compile-time}
 
 
 
