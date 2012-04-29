@@ -16,6 +16,13 @@
 (define-syntax blahblahblah repeat-three)
 
 
+;; We can look at the compile-time binding for the thing connected to
+;; the id blah-blah-blah by using syntax-local-value
+(begin-for-syntax
+ (printf "blahblahblah is connected to: ~s\n"
+         (syntax-local-value (syntax blahblahblah))))
+ 
+
 (define (f)
   (blahblahblah (display "blah"))
   (newline))

@@ -4,7 +4,8 @@
           "scribble-helpers.rkt"
           (for-label racket/base
                      racket/stxparam
-                     racket/splicing))
+                     racket/splicing
+                     racket/match))
 
 @(define my-eval (make-base-eval))
 
@@ -202,18 +203,19 @@ compile-time computations, and they run in distinct phases.
 
 @subsection{Macros are compile-time functions}
 
-@margin-note{For the gory details about Racket's expansion
-process, see the @link["http://docs.racket-lang.org/reference/syntax-model.html"]{reference manual}.}
-One of the main applications of compile-time computation is to rewrite
-programs from one form to another.  Racket's compiler has a built-in
-@emph{expander} that uses compile-time functions to rewrite a program.
-Racket's expander is open to extension by letting us associate a
-compile-time function to a name; we call such compile-time functions
-``@emph{macros}''.  When the expander sees a name that's associated to
-a macro, it applies that macro on a selected portion of the program
-and replaces that portion with the value returned from the macro.  The
-expander continues expanding until the program only uses primitive
-``core'' forms.
+@margin-note{For the gory details about Racket's expansion process,
+see the
+@link["http://docs.racket-lang.org/reference/syntax-model.html"]{reference
+manual}.}  One of the main applications of compile-time computation is
+to rewrite programs from one form to another.  Racket's compiler has a
+built-in @emph{expander} process that uses compile-time functions to
+rewrite a program.  Racket's expander is open to extension by letting
+us associate a compile-time function to a name; we call such
+compile-time functions ``@emph{macros}''.  When the expander sees a
+name that's associated to a macro, it applies that macro on a selected
+portion of the program and replaces that portion with the value
+returned from the macro.  The expander continues expanding until the
+program only uses primitive ``core'' forms.
 
 
 The following is a toy example of a compile-time function being used
@@ -231,10 +233,17 @@ as a macro.
        (syntax
          (begin thing thing thing))])))
   
-;; and we can hook this compile-time function up to the macro expander:
+;; We can hook this compile-time function up to the macro expander:
 (define-syntax blahblahblah repeat-three)
 
-;; Example:
+;; We can even look at this compile-time binding to blah-blah-blah,
+;; by using the syntax-local-value function.
+(begin-for-syntax
+ (printf "blahblahblah is connected to: ~s\n"
+         (syntax-local-value (syntax blahblahblah))))
+
+
+;; Finally, let's use it.  For example:
 (blahblahblah (displayln "blah"))
 }|
 
@@ -244,10 +253,22 @@ Racket uses an abstract syntax tree structure called a
 object} to represent programs.  It provides a variety of tools to manipulate these structured
 values. We can pattern-match and pull apart a syntax object with
 ``@racket[syntax-case]'', and create a new syntax object with
-``@racket[syntax]''.  The two forms cooperate with each other: when we
-pattern match a syntax-object with @racket[syntax-case], it exposes
-the components of the pattern so that they be referenced by
-@racket[syntax].
+``@racket[syntax]''.
+
+These two forms cooperate with each other: when we pattern match a
+syntax-object with @racket[syntax-case], it exposes the components of
+the pattern so that they be referenced by @racket[syntax].  In that
+sense, @racket[syntax-case] works analogously to @racket[match], but
+it is designed to work with the special needs of syntax objects.
+
+
+Here, we use @racket[define-syntax] to connect a compile-time function
+called @racket[repeat-three] to an identifier named
+@racket[blahblahblah].  By doing so, we're telling Racket's expander
+that whenever it's processing a @racket[blahblahblah], it should use
+our @racket[repeat-three] function.  We can even go back and take the
+syntax object produced by @racket[(syntax blahblahblah)], and we'll
+see that it's bound to our compile-time function.
 
 
 Since it's such a common usage pattern to declare a compile-time
