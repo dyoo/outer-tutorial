@@ -425,11 +425,24 @@ Now that we're finished probing @racket[cow], let's go back and see
 how to define @racket[outer] in the remaining space we have.
 
 
+@;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 @section{Defining @racket[def]}
 
-We now have a better idea of how macros and lexical scope works.
-Syntax objects accumulate lexical information through the actions of
-the expander.  Now let's break lexical scope.
+We now have a better idea of how macros and lexical scope works.  When
+Racket's compiler processes a module, it creates a syntax object out
+of the source.  The lexical context of that syntax object initially
+holds bindings only from the language of that module; the syntax
+object does not yet have any other binding information yet.
+
+What introduces additional binding information is the process of
+expansion.  Racket's compiler takes an iterative approach in expanding
+the syntax, and when it encounters forms that are meant to bind
+variables, such as @racket[define] or @racket[let], then it knows to
+enrich the lexical information of the expressions in that binding's
+scope.
+
+Now let's break it.
 
 To qualify: we'd like to define an @racket[outer] form that lets us
 break lexical scoping in a controlled fashion: we'll allow
