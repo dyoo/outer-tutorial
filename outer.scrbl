@@ -110,7 +110,9 @@ cooperate with Racket's compiler, so that we won't impose any run-time
 penalty.  The tutorial is meant to be self-contained, and expects 
 moderate Racket knowledge (functions, modules, structures).
 
+
 Please let me know if you have any suggestions or comments!
+
 
 
 
@@ -172,7 +174,7 @@ This output supports the idea that, under normal circumstances,
 Racket interposes a compilation phase since it doesn't see any stored
 bytecode on disk.
 
-Let's compile the program, using @tt{raco make}:
+Let's change that.  We'll compile the program, using the @tt{raco make} command:
 @nested[#:style 'inset]{
 @verbatim|{
 $ raco make date-at-compile-time.rkt 
@@ -266,9 +268,10 @@ Here, we use @racket[define-syntax] to connect a compile-time function
 called @racket[repeat-three] to an identifier named
 @racket[blahblahblah].  By doing so, we're telling Racket's expander
 that whenever it's processing a @racket[blahblahblah], it should use
-our @racket[repeat-three] function.  We can even go back and take the
-syntax object produced by @racket[(syntax blahblahblah)], and we'll
-see that it's bound to our compile-time function.
+our @racket[repeat-three] function.  We can even use
+@racket[syntax-local-value] at compile-time to see that we've
+successfully attached the compile-time function so that the expander
+can know about it.
 
 
 Since it's such a common usage pattern to declare a compile-time
@@ -659,3 +662,15 @@ still
 I want to thank Brian Mastenbrook and Eli Barzilay as well for helping
 me out here.  Hopefully this tutorial will help others avoid the same
 pitfalls.
+
+
+@subsection{Revision history}
+@itemize[
+
+@item{Early April 2012: Initial release.}
+
+@item{Late April 2012: Changed the @racket[outer] macro so it doesn't
+use syntax parameters, based on feedback from Briand Mastenbrook and
+Eli Barzilay.  Added some prose to further explain what's going on.}
+
+]
