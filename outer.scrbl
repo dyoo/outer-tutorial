@@ -729,7 +729,7 @@ pitfalls.
 @item{Early April 2012: Initial release.}
 
 @item{Late April 2012: Changed the @racket[outer] macro so it doesn't
-use syntax parameters, based on feedback from Briand Mastenbrook and
+use syntax parameters, based on feedback from Brian Mastenbrook and
 Eli Barzilay.  Added some prose to further explain what's going on.}
 
 ]
