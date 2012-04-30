@@ -1,13 +1,13 @@
 #lang racket
 
-(require "outer.rkt"
+(require (rename-in "outer.rkt" [outer o])
          rackunit)
 
 
 
 (let ()
   (def (f x) 
-    (def (g x) (* (outer x) x))
+    (def (g x) (* (o x) x))
       (g 4))
   (check-equal? (f 2) 8))
 
@@ -41,14 +41,14 @@
 
 (check-good (def (g x)
              (def (h x)
-               (m2 (outer x)))
+               (m2 (o x)))
              (h 'bad))
            (g 'good))
 
 
 (check-good (def (g x)
              (def (h x)
-               (m1 (outer x)))
+               (m1 (o x)))
              (h 'bad))
            (g 'good))
 
@@ -56,7 +56,7 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m1 (outer 1 x)))
+                 (m1 (o 1 x)))
                (k 'bad))
              (h 'good))
            (g 'bad))
@@ -65,7 +65,7 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m1 (outer (outer x))))
+                 (m1 (o (o x))))
                (k 'bad))
              (h 'bad))
            (g 'good))
@@ -74,7 +74,7 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m2 (outer 1 x)))
+                 (m2 (o 1 x)))
                (k 'bad))
              (h 'good))
            (g 'bad))
@@ -83,7 +83,7 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m2 (outer 2 x)))
+                 (m2 (o 2 x)))
                (k 'bad))
              (h 'bad))
            (g 'good))
@@ -93,25 +93,25 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m2 (outer (outer x))))
+                 (m2 (o (o x))))
                (k 'bad))
              (h 'bad))
            (g 'good))
 
 
 
-;; nesting m1 and m2 should still not break outer.
+;; nesting m1 and m2 should still not break o.
 
 (check-good (def (g x)
              (def (h x)
-               (m1 (m2 (outer x))))
+               (m1 (m2 (o x))))
              (h 'bad))
            (g 'good))
 
 
 (check-good (def (g x)
              (def (h x)
-               (m1 (m1 (outer x))))
+               (m1 (m1 (o x))))
              (h 'bad))
            (g 'good))
 
@@ -119,25 +119,7 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m1 (m1 (outer 1 x))))
-               (k 'bad))
-             (h 'good))
-           (g 'bad))
-
-
-(check-good (def (g x)
-             (def (h x)
-               (def (k x)
-                 (m1 (m1 (outer 2 x))))
-               (k 'bad))
-             (h 'bad))
-           (g 'good))
-
-
-(check-good (def (g x)
-             (def (h x)
-               (def (k x)
-                 (m1 (m2 (outer 1 x))))
+                 (m1 (m1 (o 1 x))))
                (k 'bad))
              (h 'good))
            (g 'bad))
@@ -146,7 +128,25 @@
 (check-good (def (g x)
              (def (h x)
                (def (k x)
-                 (m1 (m2 (outer 2 x))))
+                 (m1 (m1 (o 2 x))))
+               (k 'bad))
+             (h 'bad))
+           (g 'good))
+
+
+(check-good (def (g x)
+             (def (h x)
+               (def (k x)
+                 (m1 (m2 (o 1 x))))
+               (k 'bad))
+             (h 'good))
+           (g 'bad))
+
+
+(check-good (def (g x)
+             (def (h x)
+               (def (k x)
+                 (m1 (m2 (o 2 x))))
                (k 'bad))
              (h 'bad))
            (g 'good))
@@ -166,7 +166,7 @@
 (check-equal? (let ()
                 (def (g x)
                   (def (h x)
-                     (m3 x (outer x)))
+                     (m3 x (o x)))
                   (h 5))
                 (g 17))
               17)
@@ -176,21 +176,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (check-equal? (let ()
-                (def (g outer)
-                  outer)
+                (def (g o)
+                  o)
                 (g 'test))
               'test)
 
-
-
-;; I think this test is wrong.
-#;(check-equal? (let ()
-                (def (g outer)
-                  (def (h x)
-                    (outer outer))
-                  (h outer))            
-                (g 'test-again))
-              'test-again)
 
 
 
@@ -210,7 +200,7 @@
 
   (def (g x)
     (def (h x)
-      (m3 x (outer x)))
+      (m3 x (o x)))
     (h 5))
 
   (check-equal? (g 4) 4))
