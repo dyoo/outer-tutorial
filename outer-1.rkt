@@ -14,7 +14,7 @@
             (define-syntax (outer stx)
               (syntax-case stx ()
                 [(_ sub-expr)
-                 (datum->syntax #'outside-context (syntax-e #'sub-expr))]))
+                 (datum->syntax #'outside-context (syntax->datum #'sub-expr))]))
 
             (lambda (args ...)
               body ...))))]))

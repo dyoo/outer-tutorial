@@ -5,7 +5,8 @@
           (for-label racket/base
                      racket/stxparam
                      racket/splicing
-                     racket/match))
+                     racket/match
+                     racket/block))
 
 @(define my-eval (make-base-eval))
 
@@ -310,7 +311,7 @@ generate helpful compile-time syntax errors.  For example:
 @code:comment{And inspect the individual syntax objects in the structure:}
 (for ([piece (syntax->list a-stx)])
   (printf "~a at line ~a, column ~a, position ~a, span ~a\n"
-          piece
+          (syntax->datum piece)
           (syntax-line piece)
           (syntax-column piece)
           (syntax-position piece)
@@ -491,16 +492,11 @@ fact, let's make these boundaries explicit, by introducing our own
 
 @racket[def] gives us a function definition syntax.  Let's try it.
 
-@(begin
-(my-eval '(begin (require racket/stxparam (for-syntax racket/base) racket/splicing)
-                 (define-syntax-parameter current-def #f)
-                 (define-syntax (def stx)
-                   (syntax-case stx ()
-                     [(_ (name args ...) body ...)
-                      (quasisyntax/loc stx
-                        (splicing-syntax-parameterize ([current-def #'#,stx])
-                                                      (define (name args ...)
-                                                        body ...)))])))))
+@(my-eval '(define-syntax (def stx)
+             (syntax-case stx ()
+               [(_ (name args ...) body ...)
+                #'(define (name args ...) body ...)])))
+
 
 @interaction[#:eval my-eval
 (def (f x) (* x x))
@@ -517,43 +513,91 @@ information in constructing a new syntax, as we did with
 @racket[probe-3].
 
 
-[... fixme: don't use syntax parameterize.]
-
-
 @codeblock|{
+#lang racket
+
+(define-syntax (def stx)
+  (syntax-case stx ()
+    [(_ (name args ...) body ...)
+     ;; We'll hold onto the outside context:
+     (with-syntax ([outside-context stx])
+       #'(define (name args ...) body ...))]))
 }|
 
-
-
-@subsection{The @racket[outer] limits}
 
 Now that this version of @racket[def] holds on to the currently
-expanding definition, other compile-time macros that run in the
-context of the body's expansion can access that outside lexical scope.
-The function @racket[syntax-parameter-value] lets us grab this
-information.
-We have enough to write @racket[outer] now.  Given something like @racket[(outer
-some-id)], we take @racket[some-id], rip the syntaxness out of the
-symbol with @racket[syntax-e], and surgically create a new syntax with
-the lexical information of the outer scope.
-@margin-note{In production code, we'd probably use the @racket[replace-context]
- function from the @racketmodname[syntax/strip-context] library instead.}
+expanding definition in @racket[outside-context], other compile-time
+macros that run in the context of the body's expansion can access that
+outside lexical scope.  Let's introduce a local macro called
+@racket[outer] that's scoped over the @racket[def]:
+
 @codeblock|{
-(define-syntax (outer stx)
+#lang racket
+(require racket/block)
+
+(define-syntax (def stx)
   (syntax-case stx ()
-    [(_ id)
-     (datum->syntax (syntax-parameter-value #'current-def)
-                    (syntax-e #'id)
-                    stx)]))
+    [(_ (name args ...) body ...)
+     ;; We'll hold onto the outside context:
+     (with-syntax ([outside-context stx]
+                   [outer (datum->syntax stx 'outer)])
+       #'(define name
+           (block 
+             (define-syntax (outer o-stx)
+               #'"fill me in")
+             (lambda (args ...) body ...))))]))
 }|
 
 
-@(my-eval '(define-syntax (outer stx)
-             (syntax-case stx ()
-               [(_ id)
-                (datum->syntax (syntax-parameter-value #'current-def)
-                               (syntax-e #'id)
-                               stx)])))
+The reason we do:
+
+@racketblock[(with-syntax (... [outer (datum->syntax stx 'outer)]))]
+
+is to introduce @racket[outer] as an
+identifier that's in the same lexical scope as the @racket[def], so
+that the function's body can use it.  That is, we're introducing
+@racket[outer] non-hygienically.@margin-note{We'll fix the
+non-hygienicness of @racket[outer] soon!}
+
+
+What should @racket[outer] do?  Given something like @racket[(outer
+some-id)], we should take @racket[some-id], rip the syntaxness out of
+the symbol with @racket[syntax->datum], and surgically create a new
+syntax with the lexical information of @racket[outside-context].
+@margin-note{In production code, we should use the
+@racket[replace-context] function from the
+@racketmodname[syntax/strip-context] library to replace the lexical
+context, rather than @racket[datum->syntax].  We'll make this
+improvement in a moment.}
+
+Ok, let's do that:
+
+@codeblock|{
+#lang racket
+(require racket/block)
+
+(provide def)
+
+(define-syntax (def stx)
+  (syntax-case stx ()
+    [(_ (name args ...) body ...)
+     (with-syntax ([outside-context stx]
+                   [outer (datum->syntax stx 'outer)])
+       #'(define name
+           (block
+
+            (define-syntax (outer o-stx)
+              (syntax-case o-stx ()
+                [(_ sub-expr)
+                 (datum->syntax #'outside-context (syntax->datum #'sub-expr))]))
+
+            (lambda (args ...)
+              body ...))))]))
+}|
+
+
+
+@(my-eval '(require "outer-1.rkt"))
 
 And now we can try this out:
 @interaction[#:eval my-eval
@@ -569,37 +613,76 @@ Hurrah!
 
 
 
-@subsection{Timing is everything}
+@subsection{Time and place is everything}
 @;
 @; Not quite satisfied with this explanation yet.  Need confirmation.
 @;
-Note the placement of the @racket[splicing-syntax-parameterize] outside the @racket[define]:
-this is intentional.  If we do it within,
+Note the placement of the definition of @racket[outer], outside the @racket[lambda]:
+is an intentional choice.  If we do it within,
 @codeblock|{
 (define-syntax (bad-def stx)
   (syntax-case stx ()
     [(_ (name args ...) body ...)
-     (with-syntax ([fun-stx stx])
-       #'(define (name args ...)
-           (splicing-syntax-parameterize ([current-def #'fun-stx])
-             body ...)))]))
+     (with-syntax ([outside-context stx]
+                   [outer (datum->syntax stx 'outer)])
+       #'(define name
+           (lambda (args ...)
+
+             (define-syntax (outer o-stx)
+               (syntax-case o-stx ()
+                 [(_ sub-expr)
+                  (datum->syntax #'outside-context (syntax->datum #'sub-expr))]))
+
+              body ...)))]))
 }|
 
-then we end up placing the @racket[splicing-parameterize] accidently
-in the scope of the @racket[define].  This wouldn't be so bad, except
-for the case that, when Racket processes the @racket[define], the
-expander enriches the syntax objects within the function body with
-lexical scoping information for its arguments.
+then the definition of @racket[outer] lives in the scope of the
+@racket[lambda].  This wouldn't be so bad, except for the case that,
+when Racket processes the @racket[lambda], the expander enriches the
+syntax objects within the function body with lexical scoping
+information for its arguments.
 
-In particular, it enriches the syntax object that we're intending
-to assign to the @racket[current-def] parameter later on.  Ooops.  So
-we need to take care to keep the @racket[splicing-syntax-parameterize]
-outside of the function's body, or else our pristine source of outside
-scope will get muddied.
+In particular, it enriches the syntax object we use,
+@racket[outside-context], that we're intending to use as a source of
+pristine lexical information.  Ooops.  So we need to take care to keep
+the definition of @racket[outer] outside of the function's body, or
+else our pristine source of outside scope will get muddied.
 
 
 
-@section{Improvements}
+@section{Making @racket[outer] a keyword}
+
+One somewhat odd thing about the work about is that @racket[outer] is
+being injected as a usable identifier in the body of a @racket[def].
+If we use @racket[outer] outside the context of any @racket[def], we
+do get an error message, but not a great one.
+
+@interaction[#:eval my-eval (outer 42)]
+
+We do get an error message... but we should be able to provide a
+better error message than that!
+
+Also, we're forcing people who use @racket[def] macro to use
+@racket[outer].  We have not given people the freedom to name things
+the way that they'd want.  This is in contrast to the other features
+in Racket, which can be renamed freely.  For example, it's easy to
+change @racket[lambda] with anything we want... like
+@racket[function]:
+@codeblock|{
+#lang racket
+(require (rename-in racket/base 
+                    [lambda function]))
+(define f (function (x) (* x x)))
+}|
+
+This depends on the key words of our language to be actual identifiers
+that are module-bound.  However, our @racket[outer] isn't bound as a
+module variable.  Let's fix this.
+
+
+
+
+@section{Other improvements}
 Now that we have an @racket[outer] macro, let's make it nicer to work with.  What's wrong with it?
 
 @subsection{Prime directive: Preserving source location}
@@ -609,30 +692,6 @@ Now that we have an @racket[outer] macro, let's make it nicer to work with.  Wha
 @subsection{Warning Will Robinson: better error messages at compile-time}
 
 
-
-
-@(
-
-(lambda () (void))
-
-#|
-section{Beyond the outer limits}
-@;
-@;There are a few other things we can do to extend this feature.
-@;
-   Better error messages with syntax-parse
-
-   (outer <number> id) ...
-
-Making a language that hides define, lambda, block, in favor of our
-own scope-saving definitions.
-
-
-For more information, see ...
-
-|#
-
-)
 
 
 
