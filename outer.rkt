@@ -7,7 +7,7 @@
 
 (begin-for-syntax
  ;; We keep a private version of "outer".  It's important that it be not
- ;; accessible outside this module.
+ ;; accessible outside this module to avoid unintentional capture.
  (define private-outer-id (string->uninterned-symbol "private-outer-id")))
 
 
@@ -42,6 +42,8 @@
                 (define (name args ...)
                   body ...))))]))
 
+
+;; 'outer' is a keyword.
 (define-syntax (outer stx)
   (cond
    [(eq? (identifier-binding (datum->syntax stx private-outer-id)) #f)
