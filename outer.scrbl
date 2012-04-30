@@ -504,13 +504,18 @@ fact, let's make these boundaries explicit, by introducing our own
 ]
 
 
-We want to amend @racket[def] so that it stores the syntax object
-representing the function as a whole.  We want this information to be
-accessible to other macros that expand when the body of the function
-is compiled.  That way, when we're in an @racket[outer], we might take
-that stored syntax object and use it as the source of lexical
-information in constructing a new syntax, as we did with
-@racket[probe-3].
+@margin-note{Alternatively, we can use @racket[quasisyntax] and use
+the @racket[stx] object directly, but since we have not introduced
+@racket[quasisyntax] in this tutorial,
+let's stick with @racket[with-syntax].}
+
+We want to amend @racket[def] so that it makes the outside context,
+represented by the function as a whole, available as a syntax object.
+We want this information be accessible to other macros that expand
+when the body of the function is compiled.  That way, when we're in an
+@racket[outer], we might take that stored syntax object and use it as
+the source of lexical information in constructing a new syntax, as we
+did with @racket[probe-3].
 
 
 @codeblock|{
@@ -551,26 +556,18 @@ outside lexical scope.  Let's introduce a local macro called
 
 The reason we do:
 
-@racketblock[(with-syntax (... [outer (datum->syntax stx 'outer)]))]
+@racketblock[(datum->syntax stx 'outer)]
 
-is to introduce @racket[outer] as an
-identifier that's in the same lexical scope as the @racket[def], so
-that the function's body can use it.  That is, we're introducing
-@racket[outer] non-hygienically.@margin-note{We'll fix the
-non-hygienicness of @racket[outer] soon!}
+is to introduce @racket[outer] as an identifier that's in the same
+lexical scope as the @racket[def].  That is, we're introducing
+@racket[outer] non-hygienically.
 
 
-What should @racket[outer] do?  Given something like @racket[(outer
-some-id)], we should take @racket[some-id], rip the syntaxness out of
-the symbol with @racket[syntax->datum], and surgically create a new
-syntax with the lexical information of @racket[outside-context].
-@margin-note{In production code, we should use the
-@racket[replace-context] function from the
-@racketmodname[syntax/strip-context] library to replace the lexical
-context, rather than @racket[datum->syntax].  We'll make this
-improvement in a moment.}
-
-Ok, let's do that:
+What should the @racket[outer] macro do?  Given something like
+@racket[(outer some-id)], we should take @racket[some-id], rip the
+syntaxness out of the symbol with @racket[syntax->datum], and
+surgically create a new syntax with the lexical information of
+@racket[outside-context].  Ok, let's do that!
 
 @codeblock|{
 #lang racket
@@ -597,9 +594,8 @@ Ok, let's do that:
 
 
 
-@(my-eval '(require "outer-1.rkt"))
-
 And now we can try this out:
+@(my-eval '(require "outer-1.rkt"))
 @interaction[#:eval my-eval
 (def (f x) 
   (def (g x) (* (outer x) x))
@@ -650,6 +646,7 @@ else our pristine source of outside scope will get muddied.
 
 
 
+
 @section{Making @racket[outer] a keyword}
 
 One somewhat odd thing about the work about is that @racket[outer] is
@@ -685,11 +682,24 @@ module variable.  Let's fix this.
 @section{Other improvements}
 Now that we have an @racket[outer] macro, let's make it nicer to work with.  What's wrong with it?
 
+
+
 @subsection{Prime directive: Preserving source location}
 
-@subsection{Quantum leap: jumping across multiple scopes at once}
+Earlier, we replaced the lexical context by taking the argument to
+@racket[outer], ripping the datum out of the syntax, and then turning
+it back into syntax with the appropriate lexical information.
+However, this is meatball surgery.  We really should use the
+@racket[replace-context] function from the
+@racketmodname[syntax/strip-context] library to replace the lexical
+context, rather than @racket[datum->syntax].  Let's do that.
+
+
 
 @subsection{Warning Will Robinson: better error messages at compile-time}
+
+
+@subsection{Quantum leap: jumping across multiple scopes at once}
 
 
 
