@@ -221,7 +221,7 @@ name; we call such compile-time functions ``@emph{macros}''.  When the
 expander sees a name that's associated to a macro, it applies that
 macro on a selected portion of the program and replaces that portion
 with the value returned from the macro.  The expander continues
-expanding until the program only uses primitive ``core'' forms.
+expanding until the program only uses primitive ``@link["http://docs.racket-lang.org/reference/syntax-model.html#(part._fully-expanded)"]{core}'' forms.
 
 
 The following is a toy example of a compile-time function being used
@@ -239,33 +239,32 @@ as a macro.
        (syntax
          (begin thing thing thing))])))
   
-;; We can hook this compile-time function up to the macro expander:
+;; Let's hook this compile-time function up to the macro expander:
 (define-syntax blahblahblah repeat-three)
 
-;; We can even look at this compile-time binding to blah-blah-blah,
+;; We can now look at this compile-time binding to blah-blah-blah,
 ;; by using the syntax-local-value function.
 (begin-for-syntax
  (printf "blahblahblah is connected to: ~s\n"
          (syntax-local-value (syntax blahblahblah))))
 
 
-;; Finally, let's use it.  For example:
+;; Finally, let's use the macro.  For example:
 (blahblahblah (displayln "blah"))
 }|
 
 
 Racket uses an abstract syntax tree structure called a
 @link["http://docs.racket-lang.org/reference/syntax-model.html#(tech._syntax._object)"]{syntax
-object} to represent programs.  It provides a variety of tools to manipulate these structured
-values. We can pattern-match and pull apart a syntax object with
-``@racket[syntax-case]'', and create a new syntax object with
-``@racket[syntax]''.
-
-These two forms cooperate with each other: when we pattern match a
-syntax-object with @racket[syntax-case], it exposes the components of
-the pattern so that they be referenced by @racket[syntax].  In that
-sense, @racket[syntax-case] works analogously to @racket[match], but
-it is designed to work with the special needs of syntax objects.
+object} to represent programs.  It provides a variety of tools to
+manipulate these structured values. We can pattern-match and pull
+apart a syntax object with ``@racket[syntax-case]'', and create a new
+syntax object with ``@racket[syntax]''.  These two forms cooperate
+with each other: when we pattern match a syntax-object with
+@racket[syntax-case], it exposes the components of the pattern so that
+they be referenced by @racket[syntax].  In that sense,
+@racket[syntax-case] works analogously to @racket[match], but it is
+designed to work with the special needs of syntax objects.
 
 
 Here, we use @racket[define-syntax] to connect a compile-time function
@@ -465,14 +464,14 @@ of the source.  The lexical context of that syntax object initially
 holds bindings only from the language of that module; the syntax
 object does not yet have any other binding information yet.
 
-What introduces additional binding information is the process of
-expansion.  Racket's compiler takes an iterative approach in expanding
-the syntax, and when it encounters forms that are meant to bind
-variables, such as @racket[define] or @racket[let], then it knows to
-enrich the lexical information of the expressions in that binding's
-scope.
+Expansion is the process of turning a program into core forms, and it
+introduces additional binding information along the way.  Racket's
+compiler takes an iterative approach in expanding the syntax, and when
+it encounters forms that are meant to bind variables, such as
+@racket[define] or @racket[let], then it knows to enrich the lexical
+information of the expressions in that binding's scope.
 
-Now let's break it.
+Now let's break lexical scope.
 
 To qualify: we'd like to define an @racket[outer] form that lets us
 break lexical scoping in a controlled fashion: we'll allow
@@ -518,34 +517,10 @@ information in constructing a new syntax, as we did with
 @racket[probe-3].
 
 
+[... fixme: don't use syntax parameterize.]
 
-@margin-note{We might use @racket[syntax-parameterize], except that if
-we do so, we interfere with how @racket[define] needs to be used in a
-@link["http://docs.racket-lang.org/reference/syntax-model.html#(part._expand-context-model)"]{context}
-that permits definitions.}
-This is a job for
-the @racket[splicing-syntax-parameterize] form, which allows us to
-maintain this kind of compile-time information during compilation and
-share it as we're expanding the body.
 
 @codeblock|{
-#lang racket
-
-(require racket/stxparam        ;; syntax parameters are defined in
-         racket/splicing)       ;; racket/stxparam and
-                                ;; racket/splicing
-
-;; Let's make a compile-time parameter called current-def that
-;; remembers the innermost def that's currently being compiled.
-(define-syntax-parameter current-def #f)
-
-(define-syntax (def stx)
-  (syntax-case stx ()
-    [(_ (name args ...) body ...)
-     (with-syntax ([fun-stx stx])
-       #'(splicing-syntax-parameterize ([current-def #'fun-stx])
-           (define (name args ...)
-              body ...)))]))
 }|
 
 
@@ -624,14 +599,14 @@ scope will get muddied.
 
 
 
-@subsection{Improvements}
+@section{Improvements}
 Now that we have an @racket[outer] macro, let's make it nicer to work with.  What's wrong with it?
 
-@subsubsection{Prime directive: Preserving source location}
+@subsection{Prime directive: Preserving source location}
 
-@subsubsection{Quantum leap: jumping across multiple scopes at once}
+@subsection{Quantum leap: jumping across multiple scopes at once}
 
-@subsubsection{Warning Will Robinson: Better error messages at compile-time}
+@subsection{Warning Will Robinson: better error messages at compile-time}
 
 
 
